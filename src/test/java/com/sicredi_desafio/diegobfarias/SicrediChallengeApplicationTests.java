@@ -1,10 +1,10 @@
-package com.sicredi_desafio.demo;
+package com.sicredi_desafio.diegobfarias;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DemoApplicationTests {
+class SicrediChallengeApplicationTests {
 
 	@Test
 	void contextLoads() {
