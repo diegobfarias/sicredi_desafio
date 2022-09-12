@@ -2,6 +2,7 @@ package com.sicredi_desafio.diegobfarias.controllers.dtos;
 
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -10,7 +11,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TopicDTO {
+public class TopicDocumentDTO implements Serializable {
 
     private LocalDateTime startTopic;
     private LocalDateTime endTopic;

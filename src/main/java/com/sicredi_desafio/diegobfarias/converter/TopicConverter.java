@@ -1,27 +1,27 @@
 package com.sicredi_desafio.diegobfarias.converter;
 
-import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDTO;
-import com.sicredi_desafio.diegobfarias.entities.Topic;
+import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
+import com.sicredi_desafio.diegobfarias.documents.TopicDocument;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TopicConverter {
 
-    public static TopicDTO toDTO(Topic topic) {
-        return TopicDTO.builder()
-                .endTopic(topic.getEndTopic())
-                .startTopic(topic.getStartTopic())
-                .topicDescription(topic.getTopicDescription())
-                .associatesVotes(topic.getAssociatesVotes())
+    public static TopicDocumentDTO toDTO(TopicDocument topicDocument) {
+        return TopicDocumentDTO.builder()
+                .endTopic(topicDocument.getEndTopic())
+                .startTopic(topicDocument.getStartTopic())
+                .topicDescription(topicDocument.getTopicDescription())
+                .associatesVotes(topicDocument.getAssociatesVotes())
                 .build();
     }
 
-    public static Topic toEntity(TopicDTO topicDTO) {
-        return Topic.builder()
-                .endTopic(topicDTO.getEndTopic())
-                .startTopic(topicDTO.getStartTopic())
-                .topicDescription(topicDTO.getTopicDescription())
-                .associatesVotes(topicDTO.getAssociatesVotes())
+    public static TopicDocument toEntity(TopicDocumentDTO topicDocumentDTO) {
+        return TopicDocument.builder()
+                .endTopic(topicDocumentDTO.getEndTopic())
+                .startTopic(topicDocumentDTO.getStartTopic())
+                .topicDescription(topicDocumentDTO.getTopicDescription())
+                .associatesVotes(topicDocumentDTO.getAssociatesVotes())
                 .build();
     }
 }

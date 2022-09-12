@@ -1,10 +1,8 @@
 package com.sicredi_desafio.diegobfarias.services;
 
 import com.sicredi_desafio.diegobfarias.client.CpfClient;
-import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDTO;
+import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
-import com.sicredi_desafio.diegobfarias.entities.Topic;
-import com.sicredi_desafio.diegobfarias.services.exceptions.ApplicationExceptionHandler;
 import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNotFoundException;
 import com.sicredi_desafio.diegobfarias.repositories.SessionRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,29 +24,29 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final CpfClient cpfClient;
 
-    public TopicDTO createNewTopic(TopicDTO topicDto) {
-        return toDTO(sessionRepository.save(toEntity(topicDto)));
+    public TopicDocumentDTO createNewTopic(TopicDocumentDTO topicDocumentDto) {
+        return toDTO(sessionRepository.save(toEntity(topicDocumentDto)));
     }
 
-    public TopicDTO findTopicById(Long topicId) {
+    public TopicDocumentDTO findTopicById(Long topicId) {
         return toDTO(sessionRepository.findById(topicId).orElseThrow(
                 () -> new SessionNotFoundException("Sessão não encontrada " + topicId)));
     }
 
-    public Optional<TopicDTO> openNewVotingTopicSession(Long topicId, LocalDateTime startTopic, LocalDateTime endTopic) {
-        TopicDTO currentVotingTopicSession = findTopicById(topicId);
+    public TopicDocumentDTO openNewVotingTopicSession(Long topicId, LocalDateTime startTopic, LocalDateTime endTopic) {
+        TopicDocumentDTO currentVotingTopicSession = findTopicById(topicId);
 
         currentVotingTopicSession.setStartTopic(isNull(startTopic) ? LocalDateTime.now() : startTopic);
         currentVotingTopicSession.setEndTopic(isNull(endTopic) ? LocalDateTime.now().plusMinutes(1) : endTopic);
-        return Optional.of(currentVotingTopicSession);
+        return toDTO(sessionRepository.save(toEntity(currentVotingTopicSession)));
     }
 
     public void computeVotes(Long topicId, Long associateId, String associateVote) {
-        TopicDTO currentVotingTopicSession = findTopicById(topicId);
-        String cpf = cpfClient.verifyCpf(String.valueOf(associateId));
+        TopicDocumentDTO currentVotingTopicSession = findTopicById(topicId);
 
         if (!currentVotingTopicSession.getAssociatesVotes().containsKey(associateId) && verifyIfIsAbleToVote(associateId)) {
             currentVotingTopicSession.getAssociatesVotes().put(associateId, associateVote);
+            sessionRepository.save(toEntity(currentVotingTopicSession));
         }
     }
 
@@ -58,7 +56,7 @@ public class SessionService {
     }
 
     public TopicVotesDTO countVotes(Long topicId) {
-        TopicDTO currentVotingTopicSession = findTopicById(topicId);
+        TopicDocumentDTO currentVotingTopicSession = findTopicById(topicId);
 
         return TopicVotesDTO.builder()
                 .topicDescription(currentVotingTopicSession.getTopicDescription())

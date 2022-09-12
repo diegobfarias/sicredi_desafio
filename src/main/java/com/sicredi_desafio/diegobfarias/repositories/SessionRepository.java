@@ -1,7 +1,7 @@
 package com.sicredi_desafio.diegobfarias.repositories;
 
-import com.sicredi_desafio.diegobfarias.entities.Topic;
-import org.springframework.data.repository.CrudRepository;
+import com.sicredi_desafio.diegobfarias.documents.TopicDocument;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface SessionRepository extends CrudRepository<Topic, Long> {
+public interface SessionRepository extends MongoRepository<TopicDocument, Long> {
 }
