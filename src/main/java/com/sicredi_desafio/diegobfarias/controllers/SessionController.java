@@ -22,12 +22,12 @@ public class SessionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(sessionService.createNewTopic(topicDocumentDTO));
     }
 
-    @PutMapping(value = "/{id}/new-voting-topic-session")
+    @PutMapping(value = "/{topicId}/new-voting-topic-session")
     public ResponseEntity<TopicDocumentDTO> openNewVotingTopicSession(
             @RequestParam(value = "startTopic") LocalDateTime startTopic,
             @RequestParam(value = "endTopic") LocalDateTime endTopic,
-            @PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(sessionService.openNewVotingTopicSession(id, startTopic, endTopic));
+            @PathVariable Long topicId) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(sessionService.openNewVotingTopicSession(topicId, startTopic, endTopic));
     }
 
     @PutMapping(value = "/{topicId}/compute-votes")

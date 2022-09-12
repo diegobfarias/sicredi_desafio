@@ -1,6 +1,7 @@
-package com.sicredi_desafio.diegobfarias.services.exceptions;
+package com.sicredi_desafio.diegobfarias.controllers.exceptions;
 
 import com.sicredi_desafio.diegobfarias.controllers.exceptions.StandardError;
+import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
 
     @ExceptionHandler(SessionNotFoundException.class)
     public ResponseEntity<StandardError> handleSessionNotFoundException(SessionNotFoundException e, HttpServletRequest request) {
-        log.error("Erro ao buscar a sessão");
+        log.error("Não foi encontrada a pauta: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(StandardError.builder()
                 .timestamp(Instant.now())
                 .status(HttpStatus.NOT_FOUND.value())
