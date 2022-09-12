@@ -4,12 +4,13 @@ import com.sicredi_desafio.diegobfarias.client.CpfClient;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
 import com.sicredi_desafio.diegobfarias.entities.Topic;
+import com.sicredi_desafio.diegobfarias.services.exceptions.ApplicationExceptionHandler;
+import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNotFoundException;
 import com.sicredi_desafio.diegobfarias.repositories.SessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -29,48 +30,42 @@ public class SessionService {
         return toDTO(sessionRepository.save(toEntity(topicDto)));
     }
 
-    public Optional<TopicDTO> openNewVotingTopicSession(Long sessionId, LocalDateTime startTopic, LocalDateTime endTopic) throws FileNotFoundException {
-        Optional<Topic> currentVotingTopicSession = sessionRepository.findById(sessionId);
-
-        if (currentVotingTopicSession.isPresent()) {
-            currentVotingTopicSession.get().setStartTopic(isNull(startTopic) ? LocalDateTime.now() : startTopic);
-            currentVotingTopicSession.get().setEndTopic(isNull(endTopic) ? LocalDateTime.now().plusMinutes(1) : endTopic);
-            return Optional.of(toDTO(currentVotingTopicSession.get()));
-        } else {
-            throw new FileNotFoundException();
-        }
+    public TopicDTO findTopicById(Long topicId) {
+        return toDTO(sessionRepository.findById(topicId).orElseThrow(
+                () -> new SessionNotFoundException("Sessão não encontrada " + topicId)));
     }
 
-    public void computeVotes(Long sessionId, Long associateId, String associateVote) throws Exception {
-        Optional<Topic> currentVotingTopicSession = sessionRepository.findById(sessionId);
+    public Optional<TopicDTO> openNewVotingTopicSession(Long topicId, LocalDateTime startTopic, LocalDateTime endTopic) {
+        TopicDTO currentVotingTopicSession = findTopicById(topicId);
+
+        currentVotingTopicSession.setStartTopic(isNull(startTopic) ? LocalDateTime.now() : startTopic);
+        currentVotingTopicSession.setEndTopic(isNull(endTopic) ? LocalDateTime.now().plusMinutes(1) : endTopic);
+        return Optional.of(currentVotingTopicSession);
+    }
+
+    public void computeVotes(Long topicId, Long associateId, String associateVote) {
+        TopicDTO currentVotingTopicSession = findTopicById(topicId);
         String cpf = cpfClient.verifyCpf(String.valueOf(associateId));
 
-        if (currentVotingTopicSession.isPresent() && cpf.equalsIgnoreCase("ABLE_TO_VOTE")) {
-            if (!currentVotingTopicSession.get().getAssociatesVotes().containsKey(associateId)) {
-                currentVotingTopicSession.get().getAssociatesVotes().put(associateId, associateVote);
-            } else {
-                // TODO criar exceção personalizada
-                throw new RuntimeException();
-            }
-        } else {
-            // TODO criar exceção personalizada
-            throw new RuntimeException();
+        if (!currentVotingTopicSession.getAssociatesVotes().containsKey(associateId) && verifyIfIsAbleToVote(associateId)) {
+            currentVotingTopicSession.getAssociatesVotes().put(associateId, associateVote);
         }
     }
 
-    public TopicVotesDTO countVotes(Long sessionId) throws Exception {
-        Optional<Topic> currentVotingTopicSession = sessionRepository.findById(sessionId);
+    private Boolean verifyIfIsAbleToVote(Long associateId) {
+        String cpf = cpfClient.verifyCpf(String.valueOf(associateId));
+        return cpf.equalsIgnoreCase("ABLE_TO_VOTE");
+    }
 
-        if (currentVotingTopicSession.isPresent()) {
-            return TopicVotesDTO.builder()
-                    .topicDescription(currentVotingTopicSession.get().getTopicDescription())
-                    .positiveVotes(currentVotingTopicSession.get().getAssociatesVotes().values()
-                            .stream().filter(vote -> vote.equalsIgnoreCase("Sim")).count())
-                    .negativeVotes(currentVotingTopicSession.get().getAssociatesVotes().values()
-                            .stream().filter(vote -> vote.equalsIgnoreCase("Não")).count())
-                    .build();
-        } else {
-            throw new RuntimeException();
-        }
+    public TopicVotesDTO countVotes(Long topicId) {
+        TopicDTO currentVotingTopicSession = findTopicById(topicId);
+
+        return TopicVotesDTO.builder()
+                .topicDescription(currentVotingTopicSession.getTopicDescription())
+                .positiveVotes(currentVotingTopicSession.getAssociatesVotes().values()
+                        .stream().filter(vote -> vote.equalsIgnoreCase("Sim")).count())
+                .negativeVotes(currentVotingTopicSession.getAssociatesVotes().values()
+                        .stream().filter(vote -> vote.equalsIgnoreCase("Não")).count())
+                .build();
     }
 }

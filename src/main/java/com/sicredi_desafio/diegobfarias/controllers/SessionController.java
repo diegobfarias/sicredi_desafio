@@ -32,7 +32,7 @@ public class SessionController {
     })
     @PostMapping(value = "/create")
     public ResponseEntity<TopicDTO> createNewTopic(@RequestBody TopicDTO topicDTO) {
-        return new ResponseEntity<>(sessionService.createNewTopic(topicDTO), HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(sessionService.createNewTopic(topicDTO));
     }
 
     @PutMapping(value = "/{id}/new-voting-topic-session")
@@ -40,12 +40,7 @@ public class SessionController {
             @RequestParam(value = "startTopic") LocalDateTime startTopic,
             @RequestParam(value = "endTopic") LocalDateTime endTopic,
             @PathVariable Long id) {
-        try {
-            return new ResponseEntity<>(sessionService.openNewVotingTopicSession(id, startTopic, endTopic), HttpStatus.ACCEPTED);
-        }
-        catch (FileNotFoundException e) {
-            return new ResponseEntity<>(empty(), HttpStatus.BAD_REQUEST);
-        }
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(sessionService.openNewVotingTopicSession(id, startTopic, endTopic));
     }
 
     @PutMapping(value = "/{id}/compute-votes")
@@ -53,22 +48,12 @@ public class SessionController {
             @RequestParam(value = "associateId") Long associateId,
             @RequestParam(value = "associateVote") String associateVote,
             @PathVariable Long id) {
-        try {
-            sessionService.computeVotes(id, associateId, associateVote);
-            return new ResponseEntity(HttpStatus.OK);
-        }
-        catch (Exception e) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
-        }
+        sessionService.computeVotes(id, associateId, associateVote);
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping(value = "/{id}/count")
     public ResponseEntity<TopicVotesDTO> countVotes(@PathVariable Long id) {
-        try {
-            return new ResponseEntity<>(sessionService.countVotes(id), HttpStatus.OK);
-        }
-        catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(sessionService.countVotes(id));
     }
 }
