@@ -1,7 +1,8 @@
 package com.sicredi_desafio.diegobfarias.controllers.exceptions;
 
-import com.sicredi_desafio.diegobfarias.controllers.exceptions.StandardError;
-import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNotFoundException;
+import com.sicredi_desafio.diegobfarias.controllers.dtos.StandardErrorDTO;
+import com.sicredi_desafio.diegobfarias.services.exceptions.TopicAlreadyExistsException;
+import com.sicredi_desafio.diegobfarias.services.exceptions.TopicNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,14 +17,25 @@ import java.time.Instant;
 @ControllerAdvice
 public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(SessionNotFoundException.class)
-    public ResponseEntity<StandardError> handleSessionNotFoundException(SessionNotFoundException e, HttpServletRequest request) {
+    @ExceptionHandler(TopicNotFoundException.class)
+    public ResponseEntity<StandardErrorDTO> handleTopicNotFoundException(TopicNotFoundException e, HttpServletRequest request) {
         log.error("Não foi encontrada a pauta: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(StandardError.builder()
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(StandardErrorDTO.builder()
                 .timestamp(Instant.now())
                 .status(HttpStatus.NOT_FOUND.value())
-                .error("Sessão não encontrada")
+                .error("Pauta não encontrada")
                 .message(e.getMessage())
+                .path(request.getRequestURI())
+                .build());
+    }
+
+    @ExceptionHandler(TopicAlreadyExistsException.class)
+    public ResponseEntity<StandardErrorDTO> handleTopicAlreadyExistsException(TopicAlreadyExistsException e, HttpServletRequest request) {
+        log.error("Já existe a pauta com a descrição: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(StandardErrorDTO.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Já existe a pauta com a descrição " + e.getMessage())
                 .path(request.getRequestURI())
                 .build());
     }

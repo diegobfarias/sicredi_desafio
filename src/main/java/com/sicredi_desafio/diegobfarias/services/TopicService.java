@@ -3,8 +3,9 @@ package com.sicredi_desafio.diegobfarias.services;
 import com.sicredi_desafio.diegobfarias.client.CpfClient;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
-import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNotFoundException;
-import com.sicredi_desafio.diegobfarias.repositories.SessionRepository;
+import com.sicredi_desafio.diegobfarias.services.exceptions.TopicAlreadyExistsException;
+import com.sicredi_desafio.diegobfarias.services.exceptions.TopicNotFoundException;
+import com.sicredi_desafio.diegobfarias.repositories.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,20 +20,27 @@ import static java.util.Objects.isNull;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SessionService {
+public class TopicService {
 
-    private final SessionRepository sessionRepository;
+    private final TopicRepository topicRepository;
     private final CpfClient cpfClient;
 
     public TopicDocumentDTO createNewTopic(TopicDocumentDTO topicDocumentDto) {
         log.info("Criando nova pauta, descrição: {}", topicDocumentDto.getTopicDescription());
-        return toDTO(sessionRepository.save(toEntity(topicDocumentDto)));
+        if (verifiyIfTopicAlreadyExists(topicDocumentDto)) {
+            throw new TopicAlreadyExistsException(toEntity(topicDocumentDto).getTopicDescription());
+        }
+        return toDTO(topicRepository.save(toEntity(topicDocumentDto)));
     }
 
-    public TopicDocumentDTO findTopicById(Long topicId) {
+    private Boolean verifiyIfTopicAlreadyExists(TopicDocumentDTO topicDocumentDTO) {
+        return topicRepository.findByDescription(toEntity(topicDocumentDTO).getTopicDescription()).isPresent();
+    }
+
+    private TopicDocumentDTO findTopicById(Long topicId) {
         log.info("Buscando pauta pela id: {}", topicId);
-        return toDTO(sessionRepository.findById(topicId).orElseThrow(
-                () -> new SessionNotFoundException(topicId)));
+        return toDTO(topicRepository.findById(topicId).orElseThrow(
+                () -> new TopicNotFoundException(topicId)));
     }
 
     public TopicDocumentDTO openNewVotingTopicSession(Long topicId, LocalDateTime startTopic, LocalDateTime endTopic) {
@@ -41,7 +49,7 @@ public class SessionService {
 
         currentVotingTopicSession.setStartTopic(isNull(startTopic) ? LocalDateTime.now() : startTopic);
         currentVotingTopicSession.setEndTopic(isNull(endTopic) ? LocalDateTime.now().plusMinutes(1) : endTopic);
-        return toDTO(sessionRepository.save(toEntity(currentVotingTopicSession)));
+        return toDTO(topicRepository.save(toEntity(currentVotingTopicSession)));
     }
 
     public void computeVotes(Long topicId, Long associateId, String associateVote) {
@@ -50,7 +58,7 @@ public class SessionService {
 
         if (!currentVotingTopicSession.getAssociatesVotes().containsKey(associateId) && verifyIfIsAbleToVote(associateId)) {
             currentVotingTopicSession.getAssociatesVotes().put(associateId, associateVote);
-            sessionRepository.save(toEntity(currentVotingTopicSession));
+            topicRepository.save(toEntity(currentVotingTopicSession));
         }
     }
 

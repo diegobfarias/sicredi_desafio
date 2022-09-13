@@ -1,4 +1,4 @@
-package com.sicredi_desafio.diegobfarias.controllers.exceptions;
+package com.sicredi_desafio.diegobfarias.controllers.dtos;
 
 import lombok.*;
 
@@ -10,7 +10,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StandardError implements Serializable {
+public class StandardErrorDTO implements Serializable {
 
     private Instant timestamp;
     private Integer status;
