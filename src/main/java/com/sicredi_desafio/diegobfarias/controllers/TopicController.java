@@ -1,5 +1,7 @@
 package com.sicredi_desafio.diegobfarias.controllers;
 
+import com.sicredi_desafio.diegobfarias.client.CpfClient;
+import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
 import com.sicredi_desafio.diegobfarias.services.TopicService;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 public class TopicController {
 
     private final TopicService topicService;
+    private final CpfClient cpfClient;
 
     @Operation(description = "Endpoint para criar uma nova pauta")
     @ApiResponse(responseCode = "201 CREATED", description = "Pauta criada com sucesso")
@@ -28,12 +31,18 @@ public class TopicController {
         return ResponseEntity.status(HttpStatus.CREATED).body(topicService.createNewTopic(topicDocumentDTO));
     }
 
+    @GetMapping(value = "/consulta-cpf/{cpf}")
+    @ResponseBody
+    public ResponseEntity<CpfDTO> checkCpf(@PathVariable("cpf") String cpf) {
+        return new ResponseEntity<>(cpfClient.verifyCpf(cpf), HttpStatus.OK);
+    }
+
     @Operation(description = "Abre uma nova sessão de votação de uma pauta")
     @ApiResponse(responseCode = "201 CREATED", description = "Nova sessão de votação criada com sucesso")
     @PutMapping(value = "/{topicId}/nova-sessao-votacao")
     public ResponseEntity<TopicDocumentDTO> openNewVotingTopicSession(
-            @RequestParam(value = "startTopic") LocalDateTime startTopic,
-            @RequestParam(value = "endTopic") LocalDateTime endTopic,
+            @RequestParam(value = "startTopic", required = false) LocalDateTime startTopic,
+            @RequestParam(value = "endTopic", required = false) LocalDateTime endTopic,
             @PathVariable String topicId) {
         return ResponseEntity.status(HttpStatus.CREATED).body(topicService.openNewVotingTopicSession(topicId, startTopic, endTopic));
     }
@@ -42,7 +51,7 @@ public class TopicController {
     @ApiResponse(responseCode = "202 ACCEPTED", description = "Voto do associado computado com sucesso")
     @PutMapping(value = "/{topicId}/votar")
     public ResponseEntity computeVotes(
-            @RequestParam(value = "associateId") Long associateId,
+            @RequestParam(value = "associateId") String associateId,
             @RequestParam(value = "associateVote") String associateVote,
             @PathVariable String topicId) {
         topicService.computeVotes(topicId, associateId, associateVote);

@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.time.ZoneOffset.UTC;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,7 +34,7 @@ public class TopicServiceTest {
     private final LocalDateTime END_DATE_PLUS_ONE_DAY = LocalDateTime.now().plusDays(1);
     private final LocalDateTime END_DATE_PLUS_60 = LocalDateTime.now().plusSeconds(60);
     private final String TOPIC_DESCRIPTION = "Pauta teste";
-    private final Long ASSOCIATE_ID = 12345678912L;
+    private final String ASSOCIATE_ID = "12345678912";
     private final String ASSOCIATE_VOTE_YES = "Sim";
     private final String ASSOCIATE_VOTE_NO = "Não";
     private final String ABLE_TO_VOTE = "ABLE_TO_VOTE";
@@ -50,10 +51,11 @@ public class TopicServiceTest {
 
     @Test
     public void givenAValidTopic_whenCreateNewTopic_thenShouldCreateANewTopicSuccessfully() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
         TopicDocumentDTO topicDocumentDTO = TopicDocumentDTO.builder()
+                .id(TOPIC_ID)
                 .topicDescription(TOPIC_DESCRIPTION)
                 .startTopic(START_DATE)
                 .endTopic(END_DATE_PLUS_ONE_DAY)
@@ -78,10 +80,11 @@ public class TopicServiceTest {
 
     @Test
     public void givenATopicThatAlreadyExists_whenCreateNewTopic_thenShouldThrowTopicAlreadyExistsException() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
         TopicDocumentDTO topicDocumentDTO = TopicDocumentDTO.builder()
+                .id(TOPIC_ID)
                 .topicDescription(TOPIC_DESCRIPTION)
                 .startTopic(START_DATE)
                 .endTopic(END_DATE_PLUS_ONE_DAY)
@@ -96,7 +99,7 @@ public class TopicServiceTest {
                 .associatesVotes(associatesVotes)
                 .build();
 
-        when(topicRepository.findByTopicDescription(anyString())).thenReturn(ofNullable(topicDocument));
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenThrow(new TopicAlreadyExistsException(topicDocumentDTO.getTopicDescription()));
 
         assertThrows(TopicAlreadyExistsException.class, () -> {
@@ -106,10 +109,11 @@ public class TopicServiceTest {
 
     @Test
     public void givenAStartAndEndDates_whenOpenNewTopicSession_thenShouldOpenANewTopicSessionSuccessfully() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
         TopicDocumentDTO topicDocumentDTO = TopicDocumentDTO.builder()
+                .id(TOPIC_ID)
                 .topicDescription(TOPIC_DESCRIPTION)
                 .startTopic(START_DATE)
                 .endTopic(END_DATE_PLUS_ONE_DAY)
@@ -124,7 +128,7 @@ public class TopicServiceTest {
                 .associatesVotes(associatesVotes)
                 .build();
 
-        when(topicRepository.findById(anyLong())).thenReturn(ofNullable(topicDocument));
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
 
         TopicDocumentDTO newTopic = topicService.openNewVotingTopicSession(TOPIC_ID, START_DATE, END_DATE_PLUS_ONE_DAY);
@@ -133,10 +137,9 @@ public class TopicServiceTest {
         assertEquals(newTopic.getEndTopic(), topicDocumentDTO.getEndTopic());
     }
 
-    // TODO Corrigir delay da data
     @Test
     public void givenNoneStartAndEndDates_whenOpenNewTopicSession_thenShouldOpenANewTopicSessionWithDurationOfOneMinute() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
         TopicDocument topicDocument = TopicDocument.builder()
@@ -147,21 +150,22 @@ public class TopicServiceTest {
                 .associatesVotes(associatesVotes)
                 .build();
 
-        when(topicRepository.findById(anyLong())).thenReturn(ofNullable(topicDocument));
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
 
         TopicDocumentDTO newTopic = topicService.openNewVotingTopicSession(anyString(), null, null);
 
-        assertEquals(START_DATE, newTopic.getStartTopic());
-        assertEquals(END_DATE_PLUS_60, newTopic.getEndTopic());
+        Long interval = newTopic.getEndTopic().toEpochSecond(UTC) - newTopic.getStartTopic().toEpochSecond(UTC);
+
+        assertEquals(60, interval);
     }
 
     @Test
     public void givenANotExistingTopic_whenOpenNewTopicSession_thenShouldThrowTopicNotFoundException() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
-        when(topicRepository.findById(anyLong())).thenReturn(empty());
+        when(topicRepository.findById(anyString())).thenReturn(empty());
         when(topicRepository.save(any(TopicDocument.class))).thenThrow(new TopicNotFoundException(TOPIC_ID));
 
         assertThrows(TopicNotFoundException.class, () -> {
@@ -171,7 +175,7 @@ public class TopicServiceTest {
 
     @Test
     public void givenATopicAndAnAssociateAndItsVote_whenComputeVotes_thenShouldSaveAssociateVote() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
         TopicDocument topicDocument = TopicDocument.builder()
@@ -182,7 +186,7 @@ public class TopicServiceTest {
                 .associatesVotes(associatesVotes)
                 .build();
 
-        when(topicRepository.findById(anyLong())).thenReturn(ofNullable(topicDocument));
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
         when(cpfClient.verifyCpf(anyString())).thenReturn(ABLE_TO_VOTE);
 
@@ -195,7 +199,7 @@ public class TopicServiceTest {
 
     @Test
     public void givenATopicAndAnAssociateAndItsVoteThatHasAlreadyVoted_whenComputeVotes_thenShouldSaveAssociateVote() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
         TopicDocument topicDocument = TopicDocument.builder()
@@ -206,7 +210,7 @@ public class TopicServiceTest {
                 .associatesVotes(associatesVotes)
                 .build();
 
-        when(topicRepository.findById(anyLong())).thenReturn(ofNullable(topicDocument));
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
         when(cpfClient.verifyCpf(anyString())).thenReturn(ABLE_TO_VOTE);
 
@@ -219,7 +223,7 @@ public class TopicServiceTest {
 
     @Test
     public void givenATopicId_whenCountVotes_thenShouldCountTheVotesOfThatTopic() {
-        Map<Long, String> associatesVotes = new HashMap<>();
+        Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
         associatesVotes.put(1L, ASSOCIATE_VOTE_NO);
         associatesVotes.put(2L, ASSOCIATE_VOTE_NO);
@@ -232,7 +236,7 @@ public class TopicServiceTest {
                 .associatesVotes(associatesVotes)
                 .build();
 
-        when(topicRepository.findById(anyLong())).thenReturn(ofNullable(topicDocument));
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
 
         TopicVotesDTO newTopicVotes = topicService.countVotes(TOPIC_ID);
 

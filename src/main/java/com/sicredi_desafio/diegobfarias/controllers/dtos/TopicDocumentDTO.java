@@ -13,8 +13,9 @@ import java.util.Map;
 @AllArgsConstructor
 public class TopicDocumentDTO implements Serializable {
 
+    private String id;
     private LocalDateTime startTopic;
     private LocalDateTime endTopic;
     private String topicDescription;
-    private Map<Long, String> associatesVotes;
+    private Map<String, String> associatesVotes;
 }

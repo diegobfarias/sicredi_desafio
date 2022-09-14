@@ -5,6 +5,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface TopicRepository extends MongoRepository<TopicDocument, Long> {
-    Optional<TopicDocument> findByTopicDescription(String topicDescription);
+public interface TopicRepository extends MongoRepository<TopicDocument, String> {
+
 }

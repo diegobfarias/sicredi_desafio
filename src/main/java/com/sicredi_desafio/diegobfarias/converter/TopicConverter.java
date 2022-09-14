@@ -9,6 +9,7 @@ public class TopicConverter {
 
     public static TopicDocumentDTO toDTO(TopicDocument topicDocument) {
         return TopicDocumentDTO.builder()
+                .id(topicDocument.getId())
                 .endTopic(topicDocument.getEndTopic())
                 .startTopic(topicDocument.getStartTopic())
                 .topicDescription(topicDocument.getTopicDescription())
@@ -18,6 +19,7 @@ public class TopicConverter {
 
     public static TopicDocument toEntity(TopicDocumentDTO topicDocumentDTO) {
         return TopicDocument.builder()
+                .id(topicDocumentDTO.getId())
                 .endTopic(topicDocumentDTO.getEndTopic())
                 .startTopic(topicDocumentDTO.getStartTopic())
                 .topicDescription(topicDocumentDTO.getTopicDescription())
