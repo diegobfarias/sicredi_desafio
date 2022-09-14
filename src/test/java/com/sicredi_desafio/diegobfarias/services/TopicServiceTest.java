@@ -1,16 +1,17 @@
 package com.sicredi_desafio.diegobfarias.services;
 
-import com.sicredi_desafio.diegobfarias.client.CpfClient;
+import com.sicredi_desafio.diegobfarias.services.client.CpfClient;
+import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
 import com.sicredi_desafio.diegobfarias.documents.TopicDocument;
 import com.sicredi_desafio.diegobfarias.repositories.TopicRepository;
-import com.sicredi_desafio.diegobfarias.services.exceptions.TopicAlreadyExistsException;
-import com.sicredi_desafio.diegobfarias.services.exceptions.TopicNotFoundException;
+import com.sicredi_desafio.diegobfarias.services.exceptions.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -31,6 +32,8 @@ public class TopicServiceTest {
     private final Long NEGATIVE_VOTES = 2L;
     private final Long POSITIVE_VOTES = 1L;
     private final LocalDateTime START_DATE = LocalDateTime.now();
+    private final LocalDateTime OLD_START_DATE = LocalDateTime.now().minusMonths(2);
+    private final LocalDateTime OLD_END_DATE = LocalDateTime.now().minusMonths(1);
     private final LocalDateTime END_DATE_PLUS_ONE_DAY = LocalDateTime.now().plusDays(1);
     private final LocalDateTime END_DATE_PLUS_60 = LocalDateTime.now().plusSeconds(60);
     private final String TOPIC_DESCRIPTION = "Pauta teste";
@@ -70,7 +73,7 @@ public class TopicServiceTest {
                 .associatesVotes(associatesVotes)
                 .build();
 
-        when(topicRepository.findByTopicDescription(anyString())).thenReturn(empty());
+        when(topicRepository.findById(anyString())).thenReturn(empty());
         when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
 
         TopicDocumentDTO newTopic = topicService.createNewTopic(topicDocumentDTO);
@@ -102,9 +105,7 @@ public class TopicServiceTest {
         when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenThrow(new TopicAlreadyExistsException(topicDocumentDTO.getTopicDescription()));
 
-        assertThrows(TopicAlreadyExistsException.class, () -> {
-            topicService.createNewTopic(topicDocumentDTO);
-        });
+        assertThrows(TopicAlreadyExistsException.class, () -> topicService.createNewTopic(topicDocumentDTO));
     }
 
     @Test
@@ -162,21 +163,16 @@ public class TopicServiceTest {
 
     @Test
     public void givenANotExistingTopic_whenOpenNewTopicSession_thenShouldThrowTopicNotFoundException() {
-        Map<String, String> associatesVotes = new HashMap<>();
-        associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
-
         when(topicRepository.findById(anyString())).thenReturn(empty());
         when(topicRepository.save(any(TopicDocument.class))).thenThrow(new TopicNotFoundException(TOPIC_ID));
 
-        assertThrows(TopicNotFoundException.class, () -> {
-            topicService.openNewVotingTopicSession(TOPIC_ID, START_DATE, END_DATE_PLUS_ONE_DAY);
-        });
+        assertThrows(TopicNotFoundException.class, () -> topicService.openNewVotingTopicSession(TOPIC_ID, START_DATE, END_DATE_PLUS_ONE_DAY));
     }
 
     @Test
     public void givenATopicAndAnAssociateAndItsVote_whenComputeVotes_thenShouldSaveAssociateVote() {
         Map<String, String> associatesVotes = new HashMap<>();
-        associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
+        associatesVotes.put("1234", ASSOCIATE_VOTE_YES);
 
         TopicDocument topicDocument = TopicDocument.builder()
                 .id(TOPIC_ID)
@@ -185,20 +181,38 @@ public class TopicServiceTest {
                 .endTopic(END_DATE_PLUS_ONE_DAY)
                 .associatesVotes(associatesVotes)
                 .build();
+        CpfDTO cpfDTO = CpfDTO.builder().status(ABLE_TO_VOTE).build();
 
         when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
-        when(cpfClient.verifyCpf(anyString())).thenReturn(ABLE_TO_VOTE);
+        when(cpfClient.verifyCpf(anyString())).thenReturn(cpfDTO);
 
-        topicService.computeVotes(TOPIC_ID, 63L, ASSOCIATE_VOTE_NO);
+        topicService.computeVotes(TOPIC_ID, ASSOCIATE_ID, ASSOCIATE_VOTE_NO);
 
-
-        assertEquals(ABLE_TO_VOTE, cpfClient.verifyCpf(String.valueOf(63L)));
+        assertEquals(ABLE_TO_VOTE, cpfClient.verifyCpf(anyString()).getStatus());
         verify(topicRepository, times(1)).save(topicDocument);
     }
 
     @Test
-    public void givenATopicAndAnAssociateAndItsVoteThatHasAlreadyVoted_whenComputeVotes_thenShouldSaveAssociateVote() {
+    public void givenATopicAndAnAssociateAndItsVote_whenComputeVotesButSessionNotOpen_thenShouldThrowSessionNoLongerOpenException() {
+        Map<String, String> associatesVotes = new HashMap<>();
+        associatesVotes.put("1234", ASSOCIATE_VOTE_YES);
+
+        TopicDocument topicDocument = TopicDocument.builder()
+                .id(TOPIC_ID)
+                .topicDescription(TOPIC_DESCRIPTION)
+                .startTopic(OLD_START_DATE)
+                .endTopic(OLD_END_DATE)
+                .associatesVotes(associatesVotes)
+                .build();
+
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
+
+        assertThrows(SessionNoLongerOpenException.class, () -> topicService.computeVotes(TOPIC_ID, ASSOCIATE_ID, ASSOCIATE_VOTE_NO));
+    }
+
+    @Test
+    public void givenATopicAndAnAssociateAndItsVoteThatHasAlreadyVoted_whenComputeVotes_thenShouldThrowAreadyVotedException() {
         Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
@@ -211,22 +225,35 @@ public class TopicServiceTest {
                 .build();
 
         when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
-        when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
-        when(cpfClient.verifyCpf(anyString())).thenReturn(ABLE_TO_VOTE);
 
-        topicService.computeVotes(TOPIC_ID, ASSOCIATE_ID, ASSOCIATE_VOTE_NO);
+        assertThrows(AssociateAlreadyVotedException.class, () -> topicService.computeVotes(TOPIC_ID, ASSOCIATE_ID, ASSOCIATE_VOTE_NO));
+    }
 
+    @Test
+    public void givenATopicAndAnInvalidAssociateAndItsVote_whenComputeVotes_thenShouldThrowCpfNotFoundException() {
+        Map<String, String> associatesVotes = new HashMap<>();
+        associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
 
-        assertEquals(ABLE_TO_VOTE, cpfClient.verifyCpf(String.valueOf(63L)));
-        verify(topicRepository, times(0)).save(topicDocument);
+        TopicDocument topicDocument = TopicDocument.builder()
+                .id(TOPIC_ID)
+                .topicDescription(TOPIC_DESCRIPTION)
+                .startTopic(START_DATE)
+                .endTopic(END_DATE_PLUS_ONE_DAY)
+                .associatesVotes(associatesVotes)
+                .build();
+
+        when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
+        when(cpfClient.verifyCpf(anyString())).thenThrow(new CpfNotFoundException(ASSOCIATE_ID));
+
+        assertThrows(CpfNotFoundException.class, () -> cpfClient.verifyCpf(ASSOCIATE_ID));
     }
 
     @Test
     public void givenATopicId_whenCountVotes_thenShouldCountTheVotesOfThatTopic() {
         Map<String, String> associatesVotes = new HashMap<>();
         associatesVotes.put(ASSOCIATE_ID, ASSOCIATE_VOTE_YES);
-        associatesVotes.put(1L, ASSOCIATE_VOTE_NO);
-        associatesVotes.put(2L, ASSOCIATE_VOTE_NO);
+        associatesVotes.put("12345678923", ASSOCIATE_VOTE_NO);
+        associatesVotes.put("12345678934", ASSOCIATE_VOTE_NO);
 
         TopicDocument topicDocument = TopicDocument.builder()
                 .id(TOPIC_ID)

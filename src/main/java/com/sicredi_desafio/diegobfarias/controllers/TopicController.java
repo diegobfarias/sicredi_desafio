@@ -1,13 +1,11 @@
 package com.sicredi_desafio.diegobfarias.controllers;
 
-import com.sicredi_desafio.diegobfarias.client.CpfClient;
+import com.sicredi_desafio.diegobfarias.services.client.CpfClient;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
 import com.sicredi_desafio.diegobfarias.services.TopicService;
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

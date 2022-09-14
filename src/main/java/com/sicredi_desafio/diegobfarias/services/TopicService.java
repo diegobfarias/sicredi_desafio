@@ -1,11 +1,12 @@
 package com.sicredi_desafio.diegobfarias.services;
 
-import com.sicredi_desafio.diegobfarias.client.CpfClient;
+import com.sicredi_desafio.diegobfarias.services.client.CpfClient;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
 import com.sicredi_desafio.diegobfarias.documents.TopicDocument;
 import com.sicredi_desafio.diegobfarias.services.exceptions.AssociateAlreadyVotedException;
+import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNoLongerOpenException;
 import com.sicredi_desafio.diegobfarias.services.exceptions.TopicAlreadyExistsException;
 import com.sicredi_desafio.diegobfarias.services.exceptions.TopicNotFoundException;
 import com.sicredi_desafio.diegobfarias.repositories.TopicRepository;
@@ -14,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 import static com.sicredi_desafio.diegobfarias.Constants.*;
 import static com.sicredi_desafio.diegobfarias.converter.TopicConverter.toDTO;
@@ -62,7 +62,9 @@ public class TopicService {
 
         if (currentVotingTopicSession.getAssociatesVotes().containsKey(associateId)) {
             throw new AssociateAlreadyVotedException(associateId);
-        } else if (verifyIfIsAbleToVote(associateId) && isSessionStillOpen(topicId)) {
+        } else if (isSessionStillOpen(topicId)) {
+            throw new SessionNoLongerOpenException(topicId);
+        } else if (verifyIfIsAbleToVote(associateId)) {
             log.info("Computando e salvando voto do associado {} para a pauta {}", associateId, topicId);
             currentVotingTopicSession.getAssociatesVotes().put(associateId, associateVote);
             topicRepository.save(currentVotingTopicSession);
@@ -71,7 +73,7 @@ public class TopicService {
 
     private Boolean isSessionStillOpen(String topicId) {
         log.info("Verificando se a sessão {} ainda está aberta.", topicId);
-        return LocalDateTime.now().toEpochSecond(UTC) <= findTopicById(topicId).getEndTopic().toEpochSecond(UTC);
+        return LocalDateTime.now().toEpochSecond(UTC) > findTopicById(topicId).getEndTopic().toEpochSecond(UTC);
     }
 
     private Boolean verifyIfIsAbleToVote(String associateId) {

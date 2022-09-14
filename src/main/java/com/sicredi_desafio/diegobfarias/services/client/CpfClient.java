@@ -1,4 +1,4 @@
-package com.sicredi_desafio.diegobfarias.client;
+package com.sicredi_desafio.diegobfarias.services.client;
 
 import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.services.exceptions.CpfNotFoundException;

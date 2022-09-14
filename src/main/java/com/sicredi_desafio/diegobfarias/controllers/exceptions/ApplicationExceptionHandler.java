@@ -1,10 +1,7 @@
 package com.sicredi_desafio.diegobfarias.controllers.exceptions;
 
 import com.sicredi_desafio.diegobfarias.controllers.dtos.StandardErrorDTO;
-import com.sicredi_desafio.diegobfarias.services.exceptions.AssociateAlreadyVotedException;
-import com.sicredi_desafio.diegobfarias.services.exceptions.CpfNotFoundException;
-import com.sicredi_desafio.diegobfarias.services.exceptions.TopicAlreadyExistsException;
-import com.sicredi_desafio.diegobfarias.services.exceptions.TopicNotFoundException;
+import com.sicredi_desafio.diegobfarias.services.exceptions.*;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -68,6 +65,19 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("O associado " + e.getMessage() + " já votou nesta pauta")
                 .message("Pauta já votada")
+                .path(request.getRequestURI())
+                .build());
+    }
+
+    @ExceptionHandler(SessionNoLongerOpenException.class)
+    @ApiResponse(responseCode = "400 BAD REQUEST", description = "Chamada quando o associado tenta votar e a sessão da pauta já fechou.")
+    public ResponseEntity<StandardErrorDTO> handleSessionNoLongerOpenException(SessionNoLongerOpenException e, HttpServletRequest request) {
+        log.error("A pauta {} não está mais aberta", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(StandardErrorDTO.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("A pauta " + e.getMessage() + " não está mais aberta para votação.")
+                .message("Sessão encerrada")
                 .path(request.getRequestURI())
                 .build());
     }
