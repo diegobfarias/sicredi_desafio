@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 public class TopicServiceTest {
 
-    private final Long TOPIC_ID = 25L;
+    private final String TOPIC_ID = "25";
     private final Long NEGATIVE_VOTES = 2L;
     private final Long POSITIVE_VOTES = 1L;
     private final LocalDateTime START_DATE = LocalDateTime.now();
@@ -150,7 +150,7 @@ public class TopicServiceTest {
         when(topicRepository.findById(anyLong())).thenReturn(ofNullable(topicDocument));
         when(topicRepository.save(any(TopicDocument.class))).thenReturn(topicDocument);
 
-        TopicDocumentDTO newTopic = topicService.openNewVotingTopicSession(anyLong(), null, null);
+        TopicDocumentDTO newTopic = topicService.openNewVotingTopicSession(anyString(), null, null);
 
         assertEquals(START_DATE, newTopic.getStartTopic());
         assertEquals(END_DATE_PLUS_60, newTopic.getEndTopic());

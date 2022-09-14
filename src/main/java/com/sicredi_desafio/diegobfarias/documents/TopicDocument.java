@@ -18,7 +18,7 @@ import java.util.Map;
 public class TopicDocument implements Serializable {
 
     @Id
-    private Long id;
+    private String id;
     private LocalDateTime startTopic;
     private LocalDateTime endTopic;
     private String topicDescription;

@@ -38,13 +38,13 @@ public class TopicService {
         return topicRepository.findByTopicDescription(toEntity(topicDocumentDTO).getTopicDescription()).isPresent();
     }
 
-    private TopicDocument findTopicById(Long topicId) {
+    private TopicDocument findTopicById(String topicId) {
         log.info("Buscando pauta pela id: {}", topicId);
-        return topicRepository.findById(topicId).orElseThrow(
+        return topicRepository.findById(Long.parseLong(topicId)).orElseThrow(
                 () -> new TopicNotFoundException(topicId));
     }
 
-    public TopicDocumentDTO openNewVotingTopicSession(Long topicId, LocalDateTime startTopic, LocalDateTime endTopic) {
+    public TopicDocumentDTO openNewVotingTopicSession(String topicId, LocalDateTime startTopic, LocalDateTime endTopic) {
         log.info("Abrindo nova sessão de votação para a pauta {} com tempo de início em {} e fim em {}", topicId, startTopic, endTopic);
         TopicDocument currentVotingTopicSession = findTopicById(topicId);
 
@@ -53,7 +53,7 @@ public class TopicService {
         return toDTO(topicRepository.save(currentVotingTopicSession));
     }
 
-    public void computeVotes(Long topicId, Long associateId, String associateVote) {
+    public void computeVotes(String topicId, Long associateId, String associateVote) {
         log.info("Computando e salvando voto do associado {} para a pauta {}", associateId, topicId);
         TopicDocument currentVotingTopicSession = findTopicById(topicId);
 
@@ -68,7 +68,7 @@ public class TopicService {
         return cpf.equalsIgnoreCase(ABLE_TO_VOTE);
     }
 
-    public TopicVotesDTO countVotes(Long topicId) {
+    public TopicVotesDTO countVotes(String topicId) {
         log.info("Contando os votos da pauta: {}", topicId);
         TopicDocument currentVotingTopicSession = findTopicById(topicId);
 
