@@ -31,15 +31,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-jar {
-    manifest {
-        attributes(
-                'Class-Path': configurations.runtimeClasspath.files.collect { it.getName() }.join(' '),
-                'Main-Class': 'diegobfarias.SicrediChallengeApplication'
-        )
-    }
-}
-
 tasks.named('test') {
     useJUnitPlatform()
 }
