@@ -69,15 +69,28 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
                 .build());
     }
 
-    @ExceptionHandler(SessionNoLongerOpenException.class)
-    @ApiResponse(responseCode = "400 BAD REQUEST", description = "Chamada quando o associado tenta votar e a sessão da pauta já fechou.")
-    public ResponseEntity<StandardErrorDTO> handleSessionNoLongerOpenException(SessionNoLongerOpenException e, HttpServletRequest request) {
-        log.error("A pauta {} não está mais aberta", e.getMessage());
+    @ExceptionHandler(SessionNotOpenException.class)
+    @ApiResponse(responseCode = "400 BAD REQUEST", description = "Chamada quando o associado tenta votar e a sessão da pauta não está aberta.")
+    public ResponseEntity<StandardErrorDTO> handleSessionNoLongerOpenException(SessionNotOpenException e, HttpServletRequest request) {
+        log.error("A pauta {} não está aberta", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(StandardErrorDTO.builder()
                 .timestamp(Instant.now())
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error("A pauta " + e.getMessage() + " não está mais aberta para votação.")
-                .message("Sessão encerrada")
+                .error("A pauta " + e.getMessage() + " não está aberta para votação.")
+                .message("Sessão não aberta")
+                .path(request.getRequestURI())
+                .build());
+    }
+
+    @ExceptionHandler(CpfUnableToVoteException.class)
+    @ApiResponse(responseCode = "400 BAD REQUEST", description = "Chamada quando o CPF do associado está UNABLE_TO_VOTE.")
+    public ResponseEntity<StandardErrorDTO> handleCpfUnableToVoteException(CpfUnableToVoteException e, HttpServletRequest request) {
+        log.error("O associado {} não pode votar.", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(StandardErrorDTO.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("O CPF " + e.getMessage() + " não está liberado para votar.")
+                .message("CPF UNABLE TO VOTE")
                 .path(request.getRequestURI())
                 .build());
     }

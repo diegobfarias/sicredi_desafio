@@ -1,26 +1,20 @@
 package com.sicredi_desafio.diegobfarias.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sicredi_desafio.diegobfarias.kafka.TopicProducer;
 import com.sicredi_desafio.diegobfarias.services.client.CpfClient;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicVotesDTO;
 import com.sicredi_desafio.diegobfarias.documents.TopicDocument;
 import com.sicredi_desafio.diegobfarias.services.exceptions.AssociateAlreadyVotedException;
-import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNoLongerOpenException;
+import com.sicredi_desafio.diegobfarias.services.exceptions.SessionNotOpenException;
 import com.sicredi_desafio.diegobfarias.services.exceptions.TopicAlreadyExistsException;
 import com.sicredi_desafio.diegobfarias.services.exceptions.TopicNotFoundException;
 import com.sicredi_desafio.diegobfarias.repositories.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Objects;
 
 import static com.sicredi_desafio.diegobfarias.Constants.*;
 import static com.sicredi_desafio.diegobfarias.converter.TopicConverter.*;
@@ -35,16 +29,15 @@ public class TopicService {
     private final TopicRepository topicRepository;
     private final CpfClient cpfClient;
 
-    private final TopicProducer topicProducer;
-
-    @Value("${topic.name.start.producer}")
-    private String topicNameNewTopic;
-
     public TopicDocumentDTO createNewTopic(TopicDocumentDTO topicDocumentDto) {
         log.info("Criando nova pauta, descrição: {}", topicDocumentDto.getTopicDescription());
         if (verifiyIfTopicAlreadyExists(topicDocumentDto)) {
             throw new TopicAlreadyExistsException(toEntity(topicDocumentDto).getId());
         }
+
+        topicDocumentDto.setStartTopic(isNull(topicDocumentDto.getStartTopic()) ? LocalDateTime.now() : topicDocumentDto.getStartTopic());
+        topicDocumentDto.setEndTopic(isNull(topicDocumentDto.getEndTopic()) ? LocalDateTime.now().plusMinutes(1L) : topicDocumentDto.getEndTopic());
+
         return toDTO(topicRepository.save(toEntity(topicDocumentDto)));
     }
 
@@ -67,8 +60,6 @@ public class TopicService {
 
         TopicDocumentDTO topicDocumentDTO = toDTO(topicRepository.save(currentVotingTopicSession));
 
-        topicProducer.send(topicNameNewTopic, toKafkaDTO(topicDocumentDTO));
-
         return topicDocumentDTO;
     }
 
@@ -77,8 +68,8 @@ public class TopicService {
 
         if (currentVotingTopicSession.getAssociatesVotes().containsKey(associateId)) {
             throw new AssociateAlreadyVotedException(associateId);
-        } else if (isSessionStillOpen(topicId)) {
-            throw new SessionNoLongerOpenException(topicId);
+        } else if (isSessionClosed(topicId)) {
+            throw new SessionNotOpenException(topicId);
         } else if (verifyIfIsAbleToVote(associateId)) {
             log.info("Computando e salvando voto do associado {} para a pauta {}", associateId, topicId);
             currentVotingTopicSession.getAssociatesVotes().put(associateId, associateVote);
@@ -86,10 +77,13 @@ public class TopicService {
         }
     }
 
-    private Boolean isSessionStillOpen(String topicId) {
+    private Boolean isSessionClosed(String topicId) {
         log.info("Verificando se a sessão {} ainda está aberta.", topicId);
         TopicDocument topicById = findTopicById(topicId);
         if (isNull(topicById.getEndTopic())) {
+            return true;
+        }
+        if (LocalDateTime.now().isBefore(topicById.getStartTopic())) {
             return true;
         }
         return LocalDateTime.now().toEpochSecond(UTC) > findTopicById(topicId).getEndTopic().toEpochSecond(UTC);

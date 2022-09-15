@@ -2,11 +2,14 @@ package com.sicredi_desafio.diegobfarias.services.client;
 
 import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.services.exceptions.CpfNotFoundException;
+import com.sicredi_desafio.diegobfarias.services.exceptions.CpfUnableToVoteException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+
+import static com.sicredi_desafio.diegobfarias.Constants.UNABLE_TO_VOTE;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +28,10 @@ public class CpfClient {
         } catch (HttpClientErrorException e) {
             log.error("CPF {} não foi encontrado.", cpf);
             throw new CpfNotFoundException(cpf);
+        }
+
+        if (cpfDTO.getStatus().equalsIgnoreCase(UNABLE_TO_VOTE)) {
+            throw new CpfUnableToVoteException(cpf);
         }
 
         return cpfDTO;

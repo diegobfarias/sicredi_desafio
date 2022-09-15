@@ -1,7 +1,6 @@
 package com.sicredi_desafio.diegobfarias.converter;
 
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
-import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentKafkaDTO;
 import com.sicredi_desafio.diegobfarias.documents.TopicDocument;
 import org.springframework.stereotype.Component;
 
@@ -25,16 +24,6 @@ public class TopicConverter {
                 .id(UUID.randomUUID().toString())
                 .endTopic(topicDocumentDTO.getEndTopic())
                 .startTopic(topicDocumentDTO.getStartTopic())
-                .topicDescription(topicDocumentDTO.getTopicDescription())
-                .associatesVotes(topicDocumentDTO.getAssociatesVotes())
-                .build();
-    }
-
-    public static TopicDocumentKafkaDTO toKafkaDTO(TopicDocumentDTO topicDocumentDTO) {
-        return TopicDocumentKafkaDTO.builder()
-                .id(topicDocumentDTO.getId())
-                .startTopic(topicDocumentDTO.getStartTopic().toString())
-                .endTopic(topicDocumentDTO.getEndTopic().toString())
                 .topicDescription(topicDocumentDTO.getTopicDescription())
                 .associatesVotes(topicDocumentDTO.getAssociatesVotes())
                 .build();

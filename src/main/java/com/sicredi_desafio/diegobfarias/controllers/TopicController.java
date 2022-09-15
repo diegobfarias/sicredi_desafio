@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 public class TopicController {
 
     private final TopicService topicService;
-    private final CpfClient cpfClient;
 
     @Operation(description = "Endpoint para criar uma nova pauta")
     @ApiResponse(responseCode = "201 CREATED", description = "Pauta criada com sucesso")

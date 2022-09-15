@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -208,7 +207,7 @@ public class TopicServiceTest {
 
         when(topicRepository.findById(anyString())).thenReturn(ofNullable(topicDocument));
 
-        assertThrows(SessionNoLongerOpenException.class, () -> topicService.computeVotes(TOPIC_ID, ASSOCIATE_ID, ASSOCIATE_VOTE_NO));
+        assertThrows(SessionNotOpenException.class, () -> topicService.computeVotes(TOPIC_ID, ASSOCIATE_ID, ASSOCIATE_VOTE_NO));
     }
 
     @Test
