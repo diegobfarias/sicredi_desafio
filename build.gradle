@@ -35,7 +35,7 @@ jar {
     manifest {
         attributes(
                 'Class-Path': configurations.runtimeClasspath.files.collect { it.getName() }.join(' '),
-                'Main-Class': 'com.sicredi_desafio.diegobfarias'
+                'Main-Class': 'com.sicredi_desafio.diegobfarias.SicrediChallengeApplication.main(SicrediChallengeApplicatio)'
         )
     }
 }
