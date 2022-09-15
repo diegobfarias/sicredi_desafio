@@ -1,5 +1,8 @@
 package com.sicredi_desafio.diegobfarias.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sicredi_desafio.diegobfarias.kafka.TopicProducer;
 import com.sicredi_desafio.diegobfarias.services.client.CpfClient;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.CpfDTO;
 import com.sicredi_desafio.diegobfarias.controllers.dtos.TopicDocumentDTO;
@@ -12,13 +15,15 @@ import com.sicredi_desafio.diegobfarias.services.exceptions.TopicNotFoundExcepti
 import com.sicredi_desafio.diegobfarias.repositories.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Objects;
 
 import static com.sicredi_desafio.diegobfarias.Constants.*;
-import static com.sicredi_desafio.diegobfarias.converter.TopicConverter.toDTO;
-import static com.sicredi_desafio.diegobfarias.converter.TopicConverter.toEntity;
+import static com.sicredi_desafio.diegobfarias.converter.TopicConverter.*;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Objects.isNull;
 
@@ -29,6 +34,11 @@ public class TopicService {
 
     private final TopicRepository topicRepository;
     private final CpfClient cpfClient;
+
+    private final TopicProducer topicProducer;
+
+    @Value("${topic.name.start.producer}")
+    private String topicNameNewTopic;
 
     public TopicDocumentDTO createNewTopic(TopicDocumentDTO topicDocumentDto) {
         log.info("Criando nova pauta, descrição: {}", topicDocumentDto.getTopicDescription());
@@ -54,7 +64,12 @@ public class TopicService {
 
         currentVotingTopicSession.setStartTopic(isNull(startTopic) ? LocalDateTime.now() : startTopic);
         currentVotingTopicSession.setEndTopic(isNull(endTopic) ? LocalDateTime.now().plusMinutes(1L) : endTopic);
-        return toDTO(topicRepository.save(currentVotingTopicSession));
+
+        TopicDocumentDTO topicDocumentDTO = toDTO(topicRepository.save(currentVotingTopicSession));
+
+        topicProducer.send(topicNameNewTopic, toKafkaDTO(topicDocumentDTO));
+
+        return topicDocumentDTO;
     }
 
     public void computeVotes(String topicId, String associateId, String associateVote) {
@@ -73,6 +88,10 @@ public class TopicService {
 
     private Boolean isSessionStillOpen(String topicId) {
         log.info("Verificando se a sessão {} ainda está aberta.", topicId);
+        TopicDocument topicById = findTopicById(topicId);
+        if (isNull(topicById.getEndTopic())) {
+            return true;
+        }
         return LocalDateTime.now().toEpochSecond(UTC) > findTopicById(topicId).getEndTopic().toEpochSecond(UTC);
     }
 

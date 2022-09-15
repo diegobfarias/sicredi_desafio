@@ -3,7 +3,9 @@
 ## Descrição
 
 Esta aplicação é uma API REST responsável em: criar novas pautas, abrir uma nova sessão de votação, receber votos dos
-associados e de contabilizar os votos totais de uma respectiva pauta. O código foi desenvolvido em inglês.
+associados e de contabilizar os votos totais de uma respectiva pauta. O código foi desenvolvido em inglês. Não foi
+possível subir a aplicação para o Heroku em virtude de que consegui realizar a implementação do Kafka apenas local,
+todavia sem o Kafka conseguiria estar com a aplicação no Heroku.
 
 ## Pauta
 
@@ -14,6 +16,13 @@ descrição da pauta e também um Map que faz a relação de chave do associado 
 
 Este projeto foi desenvolvido na linguagem Java, utilizando SpringBoot e MongoDB como banco de dados. Ela está rodando
 em um servidor na nuvem da Heroku. Foi utilizado JUnit 5 para a realização de testes unitários.
+
+## Execução
+
+A versão do Kafka utilizada é kafka_2.12-2.6.2. Para subir, é necessário dois terminais bash com os seguintes comandos:
+
+- bin/windows/zookeeper-server-start.bat config/zookeeper.properties
+- bin/windows/kafka-server-start.bat config/server.properties
 
 ## Endpoints
 

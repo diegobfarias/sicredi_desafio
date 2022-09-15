@@ -3,6 +3,7 @@ package com.sicredi_desafio.diegobfarias.controllers.dtos;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -10,9 +11,11 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class TopicVotesDTO implements Serializable {
+public class TopicDocumentKafkaDTO implements Serializable {
 
+    private String id;
+    private String startTopic;
+    private String endTopic;
     private String topicDescription;
-    private Long positiveVotes;
-    private Long negativeVotes;
+    private Map<String, String> associatesVotes;
 }

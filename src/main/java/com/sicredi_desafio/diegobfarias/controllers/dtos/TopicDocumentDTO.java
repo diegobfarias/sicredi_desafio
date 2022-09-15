@@ -11,6 +11,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class TopicDocumentDTO implements Serializable {
 
     private String id;

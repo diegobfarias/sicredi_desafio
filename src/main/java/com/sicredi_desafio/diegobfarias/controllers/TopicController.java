@@ -29,20 +29,14 @@ public class TopicController {
         return ResponseEntity.status(HttpStatus.CREATED).body(topicService.createNewTopic(topicDocumentDTO));
     }
 
-    @GetMapping(value = "/consulta-cpf/{cpf}")
-    @ResponseBody
-    public ResponseEntity<CpfDTO> checkCpf(@PathVariable("cpf") String cpf) {
-        return new ResponseEntity<>(cpfClient.verifyCpf(cpf), HttpStatus.OK);
-    }
-
     @Operation(description = "Abre uma nova sessão de votação de uma pauta")
     @ApiResponse(responseCode = "201 CREATED", description = "Nova sessão de votação criada com sucesso")
     @PutMapping(value = "/{topicId}/nova-sessao-votacao")
     public ResponseEntity<TopicDocumentDTO> openNewVotingTopicSession(
-            @RequestParam(value = "startTopic", required = false) LocalDateTime startTopic,
-            @RequestParam(value = "endTopic", required = false) LocalDateTime endTopic,
+            @RequestParam(value = "startTopic", required = false) String startTopic,
+            @RequestParam(value = "endTopic", required = false) String endTopic,
             @PathVariable String topicId) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(topicService.openNewVotingTopicSession(topicId, startTopic, endTopic));
+        return ResponseEntity.status(HttpStatus.CREATED).body(topicService.openNewVotingTopicSession(topicId, LocalDateTime.parse(startTopic), LocalDateTime.parse(endTopic)));
     }
 
     @Operation(description = "Recebe os votos dos associados em uma pauta")
