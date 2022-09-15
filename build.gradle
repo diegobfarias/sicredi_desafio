@@ -34,7 +34,7 @@ dependencies {
 jar {
     manifest {
         attributes(
-                'Main-Class': 'SicrediChallengeApplication'
+                'Main-Class': 'com.sicredi_desafio.diegobfarias.SicrediChallengeApplication'
         )
     }
 }
